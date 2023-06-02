@@ -6,7 +6,7 @@ public static class Program
     {
         Console.WriteLine("МОДЕЛИРОВАНИЕ РАБОТЫ АЭРОПОРТА (7 дней)\n\nТеоретически ожидается:\n1) самолетов — 1400\n2) Плохих взлетно-посадочных условий - 8\n4) ср. время обслуживания самолетов - 7.22 мин\n");
 
-        Run(15, false);
+        Run(30, false);
     }
 
     private static void Run(int N, bool specialAirplanes)
