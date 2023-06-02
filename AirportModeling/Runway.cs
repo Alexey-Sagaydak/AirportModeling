@@ -1,4 +1,4 @@
-﻿namespace SeaPortModelling;
+﻿namespace AirportModelling;
 
 public class Runway
 {

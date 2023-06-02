@@ -1,50 +1,50 @@
-﻿namespace SeaPortModelling;
+﻿namespace AirportModelling;
 
 public class Airport
 {
-    public Runway[] Stations { get; set; }
-    private float[] TankerFrequencies { get; }
-    private TimeGenerator SpecialTankerCycle { get; }
+    public Runway[] Runways { get; set; }
+    private float[] AirplaneFrequencies { get; }
+    private TimeGenerator SpecialAirplaneCycle { get; }
     private TimeGenerator ArriveTimeGenerator { get; }
-    private BadLandingConditions Storm { get; }
-    public int SpecialTankersArrived { get; set; }
-    public int StormAmount { get; set; }
-    private Airplane[] SpecialTankers { get; }
+    private BadLandingConditions BadLandingConditions { get; }
+    public int SpecialAirplanesArrived { get; set; }
+    public int BadLandingConditionsAmount { get; set; }
+    private Airplane[] SpecialAirplanes { get; }
     private int Counter { get; set; }
     public float QueueTime { get; set; }
-    public int TankersArrived { get; set;  }
+    public int AirplanesArrived { get; set;  }
     private float ModellingDuration;
 
-    public Airport(int stationsAmount, TimeGenerator arriveTimeGenerator, TimeGenerator specialTankerCycle,
-        float[] tankerFrequencies, BadLandingConditions storm)
+    public Airport(int runwaysAmount, TimeGenerator arriveTimeGenerator, TimeGenerator specialTankerCycle,
+        float[] airplaneFrequencies, BadLandingConditions storm)
     {
-        Stations = new Runway[stationsAmount];
-        SpecialTankers = new Airplane[5];
-        InitializeStations();
+        Runways = new Runway[runwaysAmount];
+        SpecialAirplanes = new Airplane[5];
+        InitializeRunways();
         if (arriveTimeGenerator == null)
             throw new ArgumentNullException(nameof(arriveTimeGenerator));
         if (specialTankerCycle == null)
             throw new ArgumentNullException(nameof(specialTankerCycle));
         if (storm == null)
             throw new ArgumentNullException(nameof(storm));
-        CheckTankerFrequencies(tankerFrequencies);
+        CheckTankerFrequencies(airplaneFrequencies);
 
-        Storm = storm;
+        BadLandingConditions = storm;
         ArriveTimeGenerator = arriveTimeGenerator;
-        SpecialTankerCycle = specialTankerCycle;
-        TankerFrequencies = tankerFrequencies;
+        SpecialAirplaneCycle = specialTankerCycle;
+        AirplaneFrequencies = airplaneFrequencies;
     }
 
-    private void InitializeSpecialTankers(float currentTime)
+    private void InitializeSpecialAirplanes(float currentTime)
     {
-        for (int i = 0; i < SpecialTankers.Length; i++)
-            SpecialTankers[i] = new Airplane(new TimeGenerator(21, 3), 0, currentTime + SpecialTankerCycle.Get());
+        for (int i = 0; i < SpecialAirplanes.Length; i++)
+            SpecialAirplanes[i] = new Airplane(new TimeGenerator(21, 3), 0, currentTime + SpecialAirplaneCycle.Get());
     }
 
-    private void InitializeStations()
+    private void InitializeRunways()
     {
-        for (int i = 0; i < Stations.Length; i++)
-            Stations[i] = new Runway();
+        for (int i = 0; i < Runways.Length; i++)
+            Runways[i] = new Runway();
     }
 
     private void CheckTankerFrequencies(float[] frequencies)
@@ -54,120 +54,120 @@ public class Airport
                 throw new ArgumentException(nameof(frequency));
     }
 
-    public void StartModelling(float modellingDuration, bool specialTankers)
+    public void StartModelling(float modellingDuration, bool specialAirplanes)
     {
         ModellingDuration = modellingDuration;
         float currentTime = 0;
 
-        if (specialTankers)
-            InitializeSpecialTankers(currentTime);
+        if (specialAirplanes)
+            InitializeSpecialAirplanes(currentTime);
         
         while (currentTime < modellingDuration)
         {
-            if (currentTime >= Storm.ArrivalTime && currentTime <= Storm.ArrivalTime + Storm.CurrentDuration)
+            if (currentTime >= BadLandingConditions.ArrivalTime && currentTime <= BadLandingConditions.ArrivalTime + BadLandingConditions.CurrentDuration)
             {
-                currentTime = Storm.ArrivalTime + Storm.CurrentDuration;
+                currentTime = BadLandingConditions.ArrivalTime + BadLandingConditions.CurrentDuration;
                 Counter++;
             }
             else
             {
-                Airplane tanker = GenerateCommonTanker(currentTime);
-                GetStation(tanker);
-                if (specialTankers)
-                    CheckSpecialTankersArrival(currentTime);
-                currentTime = tanker.ArriveTime;
-                QueueTime += tanker.QueueTime;
+                Airplane airplane = GenerateCommonTanker(currentTime);
+                GetRunway(airplane);
+                if (specialAirplanes)
+                    CheckSpecialAirplanesArrival(currentTime);
+                currentTime = airplane.ArriveTime;
+                QueueTime += airplane.QueueTime;
             }
 
-            if (Storm.ArrivalTime <= currentTime)
+            if (BadLandingConditions.ArrivalTime <= currentTime)
             {
-                Storm.Get();
-                StormAmount++;
+                BadLandingConditions.Get();
+                BadLandingConditionsAmount++;
             }
         }
 
-        CalculateTankersArrived();
-        QueueTime /= TankersArrived;
+        CalculateAirplanesArrived();
+        QueueTime /= AirplanesArrived;
         CalculateSpentTime(modellingDuration);
     }
 
-    private void CalculateTankersArrived()
+    private void CalculateAirplanesArrived()
     {
-        foreach (Runway station in Stations)
-            TankersArrived += station.ServedAmount;
+        foreach (Runway runway in Runways)
+            AirplanesArrived += runway.ServedAmount;
     }
     private void CalculateSpentTime(float modellingDuration)
     {
-        foreach (Runway station in Stations)
-            station.SpentTime = station.ReleaseTime - station.IdleTime;
+        foreach (Runway runway in Runways)
+            runway.SpentTime = runway.ReleaseTime - runway.IdleTime;
     }
 
     public float GetAverageSpentTime()
     {
         float sum = 0;
 
-        foreach (Runway station in Stations)
+        foreach (Runway runway in Runways)
         {
-            sum += (station.SpentTime == ModellingDuration) ? 0 : station.SpentTime;
+            sum += (runway.SpentTime == ModellingDuration) ? 0 : runway.SpentTime;
         }
             
 
-        return sum / TankersArrived;
+        return sum / AirplanesArrived;
     }
 
-    private void CheckSpecialTankersArrival(float currentTime)
+    private void CheckSpecialAirplanesArrival(float currentTime)
     {
-        foreach (Airplane tanker in SpecialTankers)
+        foreach (Airplane airplane in SpecialAirplanes)
         {
-            if (currentTime > tanker.ArriveTime)
+            if (currentTime > airplane.ArriveTime)
             {
-                GetStation(tanker);
-                SpecialTankersArrived++;
-                tanker.ArriveTime = currentTime + SpecialTankerCycle.Get();
+                GetRunway(airplane);
+                SpecialAirplanesArrived++;
+                airplane.ArriveTime = currentTime + SpecialAirplaneCycle.Get();
             }
         }
     }
 
-    private int GetTankersAmount()
+    private int GetAirplanesAmount()
     {
         int count = 0;
-        foreach (Runway station in Stations)
-            count += station.ServedAmount;
+        foreach (Runway runway in Runways)
+            count += runway.ServedAmount;
         return count;
     }
 
-    private void GetStation(Airplane tanker)
+    private void GetRunway(Airplane airplane)
     {
-        foreach (Runway station in Stations)
+        foreach (Runway runway in Runways)
         {
-            if (tanker.ArriveTime >= station.ReleaseTime)
+            if (airplane.ArriveTime >= runway.ReleaseTime)
             {
-                station.IdleTime += tanker.ArriveTime - station.ReleaseTime;
-                station.ReleaseTime = tanker.ArriveTime + tanker.LoadTime.Get();
-                station.ServedAmount++;
+                runway.IdleTime += airplane.ArriveTime - runway.ReleaseTime;
+                runway.ReleaseTime = airplane.ArriveTime + airplane.LoadTime.Get();
+                runway.ServedAmount++;
                 return;
             }
         }
 
         Random r = new Random();
-        int value = r.Next(0, Stations.Length);
-        tanker.QueueTime += Stations[value].ReleaseTime - tanker.ArriveTime;
-        Stations[value].ReleaseTime += tanker.LoadTime.Get();
-        Stations[value].ServedAmount++;
+        int value = r.Next(0, Runways.Length);
+        airplane.QueueTime += Runways[value].ReleaseTime - airplane.ArriveTime;
+        Runways[value].ReleaseTime += airplane.LoadTime.Get();
+        Runways[value].ServedAmount++;
     }
 
     private Airplane GenerateCommonTanker(float currentTime)
     {
         Random r = new Random();
-        float arriveTime = currentTime + ArriveTimeGenerator.Get(), tankerType = (float)r.NextDouble();
+        float arriveTime = currentTime + ArriveTimeGenerator.Get(), airplaneType = (float)r.NextDouble();
         TimeGenerator timeGenerator;
 
-        if (tankerType < TankerFrequencies[0])
-            timeGenerator = new TimeGenerator(18, 2);
-        else if (tankerType < TankerFrequencies[0] + TankerFrequencies[1])
-            timeGenerator = new TimeGenerator(24, 3);
-        else
-            timeGenerator = new TimeGenerator(35, 4);
+        //if (airplaneType < AirplaneFrequencies[0])
+        //    timeGenerator = new TimeGenerator(18, 2);
+        //else if (airplaneType < AirplaneFrequencies[0] + AirplaneFrequencies[1])
+        //    timeGenerator = new TimeGenerator(24, 3);
+        //else
+        timeGenerator = new TimeGenerator(12, 5);
 
         return new Airplane(timeGenerator, 0, arriveTime);
     }
